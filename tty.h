@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <errno.h>
 
 #if defined(__APPLE__)
@@ -17,3 +18,4 @@ typedef struct _tty {
 
 
 tty_t tty_spawn(void);
+void tty_shell(const tty_t self, const char* shell);

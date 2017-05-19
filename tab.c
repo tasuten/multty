@@ -2,6 +2,7 @@
 
 tab_elem_t* tab_init(void) {
   tty_t t = tty_spawn();
+  tty_shell(t, "/bin/bash");
   tab_elem_t* head = (tab_elem_t *)calloc(1, sizeof(tab_elem_t));
   head->tty = t;
   head->next = NULL;

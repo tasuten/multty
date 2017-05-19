@@ -13,3 +13,18 @@ tty_t tty_spawn(void) {
   }
   return result;
 }
+
+void tty_shell(const tty_t self, const char* shell) {
+  if (self.pid == 0) {
+    // child
+    extern char **environ;
+    if ( execle(shell, (char *)NULL, environ) == -1) {
+      fprintf(stderr, "exec() dead with errno: %d\n", errno);
+      exit(EXIT_FAILURE);
+    }
+  } else {
+    // parent
+    while(1);
+  }
+
+}
