@@ -1,5 +1,9 @@
 #pragma once
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+
 #if defined(__APPLE__)
 #include <util.h>
 #else
@@ -7,7 +11,7 @@
 #endif
 
 typedef struct _tty {
-  int master_fd; 
+  int master_fd;
   int pid;
 } tty_t;
 
