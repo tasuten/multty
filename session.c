@@ -12,17 +12,22 @@ void session_start(void) {
   tab_elem_t* tab = tabs; // stub
   // and
 
+  // pass through to the signal_handler thread
   sigset_t ignore;
   sigfillset(&ignore);
+  pthread_sigmask(SIG_SETMASK,  &ignore,  NULL);
+
+  // SIGCHLD's default action is IGNore
+  // So, it doesn't ignore this
   struct sigaction dummy;
   dummy.sa_flags = SA_NOCLDSTOP;
   sigaction(SIGCHLD, &dummy, NULL);
-  pthread_sigmask(SIG_SETMASK,  &ignore,  NULL);
 
   pthread_t in, out;
-  pthread_t sig;
   pthread_create(&in, NULL, &input_handler, tab);
   pthread_create(&out, NULL, &output_handler, tab);
+
+  pthread_t sig;
   pthread_create(&sig, NULL, &signal_handler, tabs);
 
   pthread_join(sig, NULL);
@@ -63,19 +68,19 @@ void* output_handler(void *tab) {
 
 void* signal_handler(void *tabs) {
 
-  sigset_t set;
-  sigemptyset(&set);
+  sigset_t looking;
+  sigemptyset(&looking);
   for ( int i = 0; i < N_SIGNALS; i++ ) {
-    sigaddset(&set, block_signals[i]);
+    sigaddset(&looking, block_signals[i]);
   }
 
-  pthread_sigmask(SIG_SETMASK, &set, NULL);
+  pthread_sigmask(SIG_SETMASK, &looking, NULL);
 
   bool fin = false;
 
   int sig;
   while (!fin) {
-    if (sigwait(&set, &sig) == 0) {
+    if (sigwait(&looking, &sig) == 0) {
       switch(sig) {
         case SIGINT:
         case SIGTERM:
@@ -87,6 +92,7 @@ void* signal_handler(void *tabs) {
           break;
         case SIGCHLD:
           puts("sigchld");
+          fin = true;
           break;
         default:
           fprintf(stderr, "Unknow signal: %s", strsignal(sig));
@@ -99,3 +105,4 @@ void* signal_handler(void *tabs) {
   puts("deadsigi");
   return NULL;
 }
+
