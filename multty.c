@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "session.h"
+
 #define NAME "multty"
 #define VERSION "alpha"
 
@@ -22,4 +24,6 @@ int main(int argc, char *argv[]) {
         usage();
     }
   }
+
+  session_start();
 }

@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -I.
 
-OBJECTS = multty.o
+OBJECTS = multty.o session.o
 
 MAIN = multty
 
