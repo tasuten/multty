@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -I.
+CFLAGS = -Wall -I.
 
 LDFLAGS= -lutil
 
