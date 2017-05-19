@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <termios.h>
+
 #include "session.h"
 
 #define NAME "multty"
@@ -25,5 +27,9 @@ int main(int argc, char *argv[]) {
     }
   }
 
+
+  struct termios restore;
+  tcgetattr(STDIN_FILENO, &restore);
   session_start();
+  tcsetattr(STDIN_FILENO, TCSANOW, &restore);
 }
