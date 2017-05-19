@@ -8,7 +8,7 @@ tty_t tty_spawn(void) {
 
   result.pid = forkpty(&result.master_fd, NULL, NULL, NULL);
   if ( result.pid == -1 ) {
-    fprintf(stderr, "forkpty() dead with errno: %d\n", errno);
+    fprintf(stderr, "forkpty() died with error: %s\n", strerror(errno));
     exit(EXIT_FAILURE);
   }
   return result;
@@ -19,12 +19,11 @@ void tty_shell(const tty_t self, const char* shell) {
     // child
     extern char **environ;
     if ( execle(shell, (char *)NULL, environ) == -1) {
-      fprintf(stderr, "exec() dead with errno: %d\n", errno);
+      fprintf(stderr, "exec() died with error: %s\n", strerror(errno));
       exit(EXIT_FAILURE);
     }
   } else {
     // parent
-    while(1);
   }
 
 }
