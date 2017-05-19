@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -I.
 
-LDFLAGS= -lutil
+LDFLAGS= -lutil -lpthread
 
 OBJECTS = multty.o session.o tab.o tty.o
 
