@@ -18,7 +18,7 @@ void tty_shell(const tty_t self, const char* shell) {
   if (self.pid == 0) {
     // child
     extern char **environ;
-    if ( execle(shell, (char *)NULL, environ) == -1) {
+    if ( execle(shell, shell, NULL, environ) == -1) {
       fprintf(stderr, "exec() died with error: %s\n", strerror(errno));
       exit(EXIT_FAILURE);
     }
