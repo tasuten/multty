@@ -24,6 +24,13 @@ void tty_shell(const tty_t self, const char* shell) {
     }
   } else {
     // parent
+    struct termios raw;
+    tcgetattr(STDIN_FILENO, &raw);
+    cfmakeraw(&raw);
+    // polling
+    raw.c_cc[VMIN] = 1;
+    raw.c_cc[VTIME] = 0;
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
   }
 
 }
