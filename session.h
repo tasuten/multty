@@ -13,7 +13,7 @@
 
 void session_start(void);
 
-void* input_handler(void *tab);
-void* output_handler(void *tab);
+void* input_handler(void);
+void* output_handler(void);
 void* signal_handler(void *tabs);
 bool sigchld_handler(tab_t* tabs);

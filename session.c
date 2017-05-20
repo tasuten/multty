@@ -5,11 +5,13 @@
 int block_signals[] = { SIGINT, SIGTERM, SIGCHLD, SIGTSTP};
 #define N_SIGNALS 4
 
+tab_t* active = NULL;
+
 void session_start(void) {
   tab_t* tabs = tabs_init();
+  active = tabs;
 
   // search active tab
-  tab_t* tab = tabs; // stub
   // and
 
   // pass through to the signal_handler thread
@@ -24,8 +26,8 @@ void session_start(void) {
   sigaction(SIGCHLD, &dummy, NULL);
 
   pthread_t in, out;
-  pthread_create(&in, NULL, &input_handler, tab);
-  pthread_create(&out, NULL, &output_handler, tab);
+  pthread_create(&in, NULL, &input_handler, NULL);
+  pthread_create(&out, NULL, &output_handler, NULL);
 
   pthread_t sig;
   pthread_create(&sig, NULL, &signal_handler, tabs);
@@ -33,9 +35,9 @@ void session_start(void) {
   pthread_join(sig, NULL);
 }
 
-void* input_handler(void *tab) {
+void* input_handler(void) {
   pthread_detach(pthread_self());
-  int fd = ((tab_t *)tab)->tty.master_fd;
+  int fd = active->tty.master_fd;
   ssize_t nread = 0;
   char buf[BUFLEN];
   while(1) {
@@ -51,9 +53,9 @@ void* input_handler(void *tab) {
 }
 
 
-void* output_handler(void *tab) {
+void* output_handler(void) {
   pthread_detach(pthread_self());
-  int fd = ((tab_t *)tab)->tty.master_fd;
+  int fd = active->tty.master_fd;
   ssize_t nread = 0;
   char buf[BUFLEN];
   while(1) {
@@ -111,8 +113,8 @@ bool sigchld_handler(tab_t* tabs) {
   if (next == NULL) {
     return true;
   } else {
-    // TODO:attach next tab and return false
-    return true;
+    active = next;
+    return false;
   }
 }
 
