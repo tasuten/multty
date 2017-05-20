@@ -91,7 +91,7 @@ void* signal_handler(void *tabs) {
           puts("detach");
           break;
         case SIGCHLD:
-          puts("sigchld");
+          sigchld_handler();
           fin = true;
           break;
         default:
@@ -104,5 +104,10 @@ void* signal_handler(void *tabs) {
 
   puts("deadsigi");
   return NULL;
+}
+
+void sigchld_handler(void) {
+          pid_t exited = waitpid(-1, NULL, WNOHANG);
+          printf("child: %d\n", exited);
 }
 
