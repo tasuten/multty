@@ -2,8 +2,8 @@
 
 #define BUFLEN 256
 
-int block_signals[] = { SIGINT, SIGTERM, SIGCHLD, SIGTSTP};
 #define N_SIGNALS 4
+const int block_signals[N_SIGNALS] = {SIGINT, SIGTERM, SIGCHLD, SIGTSTP};
 
 tab_t* active = NULL;
 
@@ -11,10 +11,8 @@ void session_start(void) {
   tab_t* tabs = tabs_init();
   active = tabs;
 
-  // search active tab
-  // and
 
-  // pass through to the signal_handler thread
+  // pass through signals to the signal_handler thread
   sigset_t ignore;
   sigfillset(&ignore);
   pthread_sigmask(SIG_SETMASK,  &ignore,  NULL);
@@ -25,12 +23,12 @@ void session_start(void) {
   dummy.sa_flags = SA_NOCLDSTOP;
   sigaction(SIGCHLD, &dummy, NULL);
 
+  pthread_t sig;
+  pthread_create(&sig, NULL, &signal_handler, tabs);
+
   pthread_t in, out;
   pthread_create(&in, NULL, &input_handler, NULL);
   pthread_create(&out, NULL, &output_handler, NULL);
-
-  pthread_t sig;
-  pthread_create(&sig, NULL, &signal_handler, tabs);
 
   pthread_join(sig, NULL);
 }
@@ -48,7 +46,7 @@ void* input_handler(void) {
     if (write(fd,  buf,  (size_t)nread) != nread) break;
   }
 
-  puts("deadie");
+  // puts("deadie");
   return NULL;
 }
 
@@ -64,7 +62,7 @@ void* output_handler(void) {
     if (write(STDOUT_FILENO,  buf,  (size_t)nread) != nread) break;
   }
 
-  puts("deadoo");
+  // puts("deadoo");
   return NULL;
 }
 
@@ -103,7 +101,7 @@ void* signal_handler(void *tabs) {
     }
   }
 
-  puts("deadsigi");
+  // puts("deadsigi");
   return NULL;
 }
 
