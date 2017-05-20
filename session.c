@@ -6,10 +6,10 @@ int block_signals[] = { SIGINT, SIGTERM, SIGCHLD, SIGTSTP};
 #define N_SIGNALS 4
 
 void session_start(void) {
-  tab_elem_t* tabs = tab_init();
+  tab_t* tabs = tabs_init();
 
   // search active tab
-  tab_elem_t* tab = tabs; // stub
+  tab_t* tab = tabs; // stub
   // and
 
   // pass through to the signal_handler thread
@@ -35,7 +35,7 @@ void session_start(void) {
 
 void* input_handler(void *tab) {
   pthread_detach(pthread_self());
-  int fd = ((tab_elem_t *)tab)->tty.master_fd;
+  int fd = ((tab_t *)tab)->tty.master_fd;
   ssize_t nread = 0;
   char buf[BUFLEN];
   while(1) {
@@ -53,7 +53,7 @@ void* input_handler(void *tab) {
 
 void* output_handler(void *tab) {
   pthread_detach(pthread_self());
-  int fd = ((tab_elem_t *)tab)->tty.master_fd;
+  int fd = ((tab_t *)tab)->tty.master_fd;
   ssize_t nread = 0;
   char buf[BUFLEN];
   while(1) {
