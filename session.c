@@ -91,8 +91,7 @@ void* signal_handler(void *tabs) {
           puts("detach");
           break;
         case SIGCHLD:
-          sigchld_handler();
-          fin = true;
+          fin = sigchld_handler((tab_t *)tabs);
           break;
         default:
           fprintf(stderr, "Unknow signal: %s", strsignal(sig));
@@ -106,8 +105,14 @@ void* signal_handler(void *tabs) {
   return NULL;
 }
 
-void sigchld_handler(void) {
-          pid_t exited = waitpid(-1, NULL, WNOHANG);
-          printf("child: %d\n", exited);
+bool sigchld_handler(tab_t* tabs) {
+  pid_t exited = waitpid(-1, NULL, WNOHANG);
+  tab_t* next = tab_drop_by_pid(tabs, exited);
+  if (next == NULL) {
+    return true;
+  } else {
+    // TODO:attach next tab and return false
+    return true;
+  }
 }
 
