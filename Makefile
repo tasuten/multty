@@ -3,19 +3,26 @@ CFLAGS = -Wall -Wextra -Wformat=2 -Wcast-qual -Wcast-align -Wwrite-strings -Wcon
 
 LDFLAGS= -lutil -lpthread
 
-OBJECTS = multty.o session.o tab.o tty.o
+TARGET = multty
 
-MAIN = multty
+SOURCES = $(wildcard *.c)
+OBJDIR = ./obj
+OBJECTS   = $(addprefix $(OBJDIR)/,  $(filter-out $(TARGET).o, $(notdir $(SOURCES:.c=.o))))
 
-all: $(MAIN)
 
-multty: $(OBJECTS)
-	$(CC) $(OBJECTS) $(LDFLAGS) -o $(MAIN)
+# $^ : string that joined depending file names with a space
+# $@ : target name
+$(TARGET): $(OBJECTS) $(TARGET).c
+	$(CC) $(LDFLAGS) $^ -o $@
 
-.c.o:
-	$(CC) $(CFLAGS) -c $<
+# $< : depending file name
+$(OBJDIR)/%.o: %.c
+	-mkdir -p $(OBJDIR)
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+all: clean $(TARGET)
 
 clean:
-	-rm -f *.o $(MAIN)
+	-rm -f $(OBJECTS) $(TARGET)
 
 .PHONY: all clean
