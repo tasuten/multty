@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -I.
+CFLAGS = -Wall -Wextra -I.
 
 LDFLAGS= -lutil -lpthread
 
