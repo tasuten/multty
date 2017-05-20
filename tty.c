@@ -14,11 +14,13 @@ tty_t tty_spawn(void) {
   return result;
 }
 
-void tty_shell(const tty_t self, const char* shell) {
+void tty_shell(const tty_t self, const char* sh) {
   if (self.pid == 0) {
     // child
-    extern char **environ;
-    if ( execle(shell, shell, NULL, environ) == -1) {
+    char* p = strrchr(sh, '/');p++; // basename
+    char *login_shell = NULL;
+    asprintf(&login_shell, "-%s", p); // requires free(), but it'll exec
+    if ( execl("/bin/sh", login_shell, NULL) == -1) {
       fprintf(stderr, "exec() died with error: %s\n", strerror(errno));
       exit(EXIT_FAILURE);
     }
