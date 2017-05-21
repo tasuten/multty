@@ -9,6 +9,6 @@ typedef struct __tab {
   struct __tab* next;
 } tab_t;
 
-tab_t* tabs_init(void);
-tab_t* tab_drop_by_pid(tab_t* tabs, const int n);
-tab_t* tab_new(tab_t* tabs);
+tab_t* tabs_list(void);
+tab_t* tab_drop_by_pid(tab_t* const tabs, const int n);
+tab_t* tab_new(tab_t* const tabs);

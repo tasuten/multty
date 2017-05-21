@@ -8,7 +8,7 @@ const int block_signals[N_SIGNALS] = {SIGINT, SIGTERM, SIGCHLD, SIGTSTP};
 tab_t* active = NULL;
 
 void session_start(void) {
-  tab_t* tabs = tabs_init();
+  tab_t* tabs = tabs_list();
   active = tabs;
 
 
