@@ -20,7 +20,10 @@ packet_t jobq_recv(int* queue) {
   packet_t pkt;
   ssize_t readlen = read(queue[READ], &pkt, sizeof(pkt));
   if (readlen == 0) {
-    pkt.type = FIN;
+    pkt.type = FINISH;
+    pkt.len = 0;
+    memset(pkt.payload, 0, PAYLOAD_LEN);
+    pkt.dest = -1;
   } else if (readlen != sizeof(pkt)) {
     fprintf(stderr, "reading jobqueue failed: %s", strerror(errno));
     jobq_close(queue);
@@ -29,7 +32,7 @@ packet_t jobq_recv(int* queue) {
   return pkt;
 }
 
-void jobq_send(int* queue, packet_t pkt) {
+void jobq_send(int* queue, const packet_t pkt) {
   ssize_t writelen = write(queue[WRITE], &pkt, sizeof(pkt));
   if (writelen != sizeof(pkt)) {
     fprintf(stderr, "writing jobqueue failed: %s", strerror(errno));

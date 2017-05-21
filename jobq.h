@@ -10,17 +10,17 @@
 
 typedef enum __type {
   MESSAGE,
-  FIN, 
+  FINISH,
 } packet_type;
 
 typedef struct __packet {
   packet_type type;
   char payload[PAYLOAD_LEN];
-  size_t len;
+  size_t len; // payload data length
   int dest;
 } packet_t;
 
 int* jobq_open(void);
 void jobq_close(int* queue);
 packet_t jobq_recv(int* queue);
-void jobq_send(int* queue, packet_t pkt);
+void jobq_send(int* queue, const packet_t pkt);

@@ -53,7 +53,7 @@ void* stdin_handler(void* jobq) {
     strncpy(pkt.payload, buf, nread);
     pkt.type = MESSAGE;
     pkt.dest = active->tty.master_fd;
-    pkt.len = nread;
+    pkt.len = (size_t)nread;
 
     jobq_send(q, pkt);
   }
@@ -75,7 +75,7 @@ void* tty_handler(void* jobq) {
     strncpy(pkt.payload, buf, nread);
     pkt.type = MESSAGE;
     pkt.dest = STDOUT_FILENO;
-    pkt.len = nread;
+    pkt.len = (size_t)nread;
     jobq_send(q, pkt);
 
   }
@@ -90,7 +90,7 @@ void* consume_queue(void *jobq) {
   while(1) {
     pkt = jobq_recv(q);
 
-    if (pkt.type == FIN) break;
+    if (pkt.type == FINISH) break;
 
     if (pkt.type == MESSAGE) {
       write(pkt.dest,  pkt.payload, pkt.len);
