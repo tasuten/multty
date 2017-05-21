@@ -9,12 +9,15 @@
 #define PAYLOAD_LEN 256
 
 typedef enum __type {
-  MESSAGE
+  MESSAGE,
+  FIN, 
 } packet_type;
 
 typedef struct __packet {
   packet_type type;
   char payload[PAYLOAD_LEN];
+  size_t len;
+  int dest;
 } packet_t;
 
 int* jobq_open(void);

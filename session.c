@@ -26,43 +26,77 @@ void session_start(void) {
   pthread_t sig;
   pthread_create(&sig, NULL, &signal_handler, tabs);
 
-  pthread_t in, out;
-  pthread_create(&in, NULL, &input_handler, NULL);
-  pthread_create(&out, NULL, &output_handler, NULL);
+  int* queue = jobq_open();
+  pthread_t in;
+  pthread_create(&in, NULL, &stdin_handler, (void *)queue);
+  pthread_t tty;
+  pthread_create(&tty, NULL, &tty_handler, (void *)queue);
+  pthread_t consumer;
+  pthread_create(&consumer, NULL, &consume_queue, (void *)queue);
+
 
   pthread_join(sig, NULL);
+  jobq_close(queue);
 }
 
-void* input_handler(void) {
+void* stdin_handler(void* jobq) {
   pthread_detach(pthread_self());
-  int fd = active->tty.master_fd;
+  int* q = (int *)jobq;
   ssize_t nread = 0;
-  char buf[BUFLEN];
+  char buf[PAYLOAD_LEN];
+  packet_t pkt;
   while(1) {
-    nread = read(STDIN_FILENO,  buf,  BUFLEN);
+    nread = read(STDIN_FILENO,  buf,  PAYLOAD_LEN);
 
     if (nread < 0 || nread == 0) break;
 
-    if (write(fd,  buf,  (size_t)nread) != nread) break;
+    strncpy(pkt.payload, buf, nread);
+    pkt.type = MESSAGE;
+    pkt.dest = active->tty.master_fd;
+    pkt.len = nread;
+
+    jobq_send(q, pkt);
   }
 
-  // puts("deadie");
   return NULL;
 }
 
-
-void* output_handler(void) {
+void* tty_handler(void* jobq) {
   pthread_detach(pthread_self());
-  int fd = active->tty.master_fd;
+  int* q = (int *)jobq;
   ssize_t nread = 0;
-  char buf[BUFLEN];
+  char buf[PAYLOAD_LEN];
+  packet_t pkt;
   while(1) {
-    if ((nread = read(fd,  buf,  BUFLEN)) <= 0) break;
+    nread = read(active->tty.master_fd, buf, PAYLOAD_LEN);
 
-    if (write(STDOUT_FILENO,  buf,  (size_t)nread) != nread) break;
+    if (nread < 0 || nread == 0) break;
+
+    strncpy(pkt.payload, buf, nread);
+    pkt.type = MESSAGE;
+    pkt.dest = STDOUT_FILENO;
+    pkt.len = nread;
+    jobq_send(q, pkt);
+
   }
 
-  // puts("deadoo");
+  return NULL;
+}
+
+void* consume_queue(void *jobq) {
+  pthread_detach(pthread_self());
+  int* q = (int *)jobq;
+  packet_t pkt;
+  while(1) {
+    pkt = jobq_recv(q);
+
+    if (pkt.type == FIN) break;
+
+    if (pkt.type == MESSAGE) {
+      write(pkt.dest,  pkt.payload, pkt.len);
+    }
+  }
+
   return NULL;
 }
 

@@ -11,10 +11,12 @@
 #include <sys/wait.h>
 
 #include "tab.h"
+#include "jobq.h"
 
 void session_start(void);
 
-void* input_handler(void);
-void* output_handler(void);
+void* stdin_handler(void *jobq);
+void* tty_handler(void *jobq);
+void* consume_queue(void *jobq);
 void* signal_handler(void *tabs);
 bool sigchld_handler(tab_t* tabs);
