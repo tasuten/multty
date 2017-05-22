@@ -32,7 +32,7 @@ void session_start(void) {
   sigaction(SIGCHLD, &dummy, NULL);
 
   pthread_t sig;
-  pthread_create(&sig, NULL, &signal_handler, self->tabs);
+  pthread_create(&sig, NULL, &signal_handler, (void *)NULL);
 
   int* queue = jobq_open();
   pthread_t in;
@@ -109,7 +109,8 @@ void* consume_queue(void *jobq) {
   return NULL;
 }
 
-void* signal_handler(void *tabs) {
+void* signal_handler(void* _) {
+  _ = NULL;
 
   sigset_t looking;
   sigemptyset(&looking);
@@ -134,7 +135,7 @@ void* signal_handler(void *tabs) {
           puts("detach");
           break;
         case SIGCHLD:
-          fin = sigchld_handler((tab_t *)tabs);
+          fin = sigchld_handler();
           break;
         default:
           fprintf(stderr, "Unknow signal: %s", strsignal(sig));
@@ -148,9 +149,9 @@ void* signal_handler(void *tabs) {
   return NULL;
 }
 
-bool sigchld_handler(tab_t* tabs) {
+bool sigchld_handler(void) {
   pid_t exited = waitpid(-1, NULL, WNOHANG);
-  tab_t* next = tab_drop_by_pid(tabs, exited);
+  tab_t* next = tab_drop_by_pid(self->tabs, exited);
   if (next == NULL) {
     return true;
   } else {

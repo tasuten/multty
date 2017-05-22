@@ -24,5 +24,5 @@ void session_start(void);
 void* stdin_handler(void *jobq);
 void* tty_handler(void *jobq);
 void* consume_queue(void *jobq);
-void* signal_handler(void *tabs);
-bool sigchld_handler(tab_t* tabs);
+void* signal_handler(void* _);
+bool sigchld_handler(void);
