@@ -6,11 +6,18 @@
 const int block_signals[N_SIGNALS] = {SIGINT, SIGTERM, SIGCHLD, SIGTSTP};
 
 
-session_t self;
+session_t* self = NULL;
 
 void session_start(void) {
-  self.tabs = tabs_list();
-  self.active = self.tabs;
+  if ( self != NULL ) {
+    fprintf(stderr, "session must exists only one, on one process\n");
+    exit(EXIT_FAILURE);
+  } else {
+    self = calloc(1, sizeof(session_t));
+  }
+
+  self->tabs = tabs_list();
+  self->active = self->tabs;
 
 
   // pass through signals to the signal_handler thread
@@ -25,7 +32,7 @@ void session_start(void) {
   sigaction(SIGCHLD, &dummy, NULL);
 
   pthread_t sig;
-  pthread_create(&sig, NULL, &signal_handler, self.tabs);
+  pthread_create(&sig, NULL, &signal_handler, self->tabs);
 
   int* queue = jobq_open();
   pthread_t in;
@@ -38,6 +45,7 @@ void session_start(void) {
 
   pthread_join(sig, NULL);
   jobq_close(queue);
+  free(self); self = NULL;
 }
 
 void* stdin_handler(void* jobq) {
@@ -53,7 +61,7 @@ void* stdin_handler(void* jobq) {
 
     strncpy(pkt.payload, buf, nread);
     pkt.type = MESSAGE;
-    pkt.dest = self.active->tty.master_fd;
+    pkt.dest = self->active->tty.master_fd;
     pkt.len = (size_t)nread;
 
     jobq_send(q, pkt);
@@ -69,7 +77,7 @@ void* tty_handler(void* jobq) {
   char buf[PAYLOAD_LEN];
   packet_t pkt;
   while(1) {
-    nread = read(self.active->tty.master_fd, buf, PAYLOAD_LEN);
+    nread = read(self->active->tty.master_fd, buf, PAYLOAD_LEN);
 
     if (nread < 0 || nread == 0) break;
 
@@ -146,7 +154,7 @@ bool sigchld_handler(tab_t* tabs) {
   if (next == NULL) {
     return true;
   } else {
-    self.active = next;
+    self->active = next;
     return false;
   }
 }
