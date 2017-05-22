@@ -5,11 +5,12 @@
 #define N_SIGNALS 4
 const int block_signals[N_SIGNALS] = {SIGINT, SIGTERM, SIGCHLD, SIGTSTP};
 
-tab_t* active = NULL;
+
+session_t self;
 
 void session_start(void) {
-  tab_t* tabs = tabs_list();
-  active = tabs;
+  self.tabs = tabs_list();
+  self.active = self.tabs;
 
 
   // pass through signals to the signal_handler thread
@@ -24,7 +25,7 @@ void session_start(void) {
   sigaction(SIGCHLD, &dummy, NULL);
 
   pthread_t sig;
-  pthread_create(&sig, NULL, &signal_handler, tabs);
+  pthread_create(&sig, NULL, &signal_handler, self.tabs);
 
   int* queue = jobq_open();
   pthread_t in;
@@ -52,7 +53,7 @@ void* stdin_handler(void* jobq) {
 
     strncpy(pkt.payload, buf, nread);
     pkt.type = MESSAGE;
-    pkt.dest = active->tty.master_fd;
+    pkt.dest = self.active->tty.master_fd;
     pkt.len = (size_t)nread;
 
     jobq_send(q, pkt);
@@ -68,7 +69,7 @@ void* tty_handler(void* jobq) {
   char buf[PAYLOAD_LEN];
   packet_t pkt;
   while(1) {
-    nread = read(active->tty.master_fd, buf, PAYLOAD_LEN);
+    nread = read(self.active->tty.master_fd, buf, PAYLOAD_LEN);
 
     if (nread < 0 || nread == 0) break;
 
@@ -145,7 +146,7 @@ bool sigchld_handler(tab_t* tabs) {
   if (next == NULL) {
     return true;
   } else {
-    active = next;
+    self.active = next;
     return false;
   }
 }

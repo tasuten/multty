@@ -13,6 +13,12 @@
 #include "tab.h"
 #include "jobq.h"
 
+typedef struct __session {
+  tab_t* tabs;
+  tab_t* active;
+  pthread_mutex_t* active_mutex;
+} session_t;
+
 void session_start(void);
 
 void* stdin_handler(void *jobq);
