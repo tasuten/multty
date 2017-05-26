@@ -1,11 +1,11 @@
 #include "tab.h"
 
-tab_t* tabs_list(void) {
+tab_t* tab_new(tab_t* const next) {
   tty_t t = tty_spawn();
   tty_shell(t, "/bin/bash");
   tab_t* head = (tab_t *)calloc(1, sizeof(tab_t));
   head->tty = t;
-  head->next = NULL;
+  head->next = next;
   return head;
 }
 
@@ -37,13 +37,3 @@ tab_t* tab_drop_by_pid(tab_t* const tabs, const pid_t pid) {
   }
 }
 
-// add to head
-tab_t* tab_new(tab_t* const tabs) {
-  tty_t t = tty_spawn();
-  tty_shell(t, "/bin/bash");
-  tab_t* new = (tab_t *)calloc(1, sizeof(tab_t));
-  new->tty = t;
-  new->next = tabs;
-
-  return new;
-}

@@ -16,7 +16,7 @@ void session_start(void) {
     self = calloc(1, sizeof(session_t));
   }
 
-  self->tabs = tabs_list();
+  self->tabs = tab_new(NULL);
   self->active = self->tabs;
 
 
