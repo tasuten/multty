@@ -14,6 +14,11 @@ tty_t tty_spawn(void) {
   return new;
 }
 
+void tty_close(const tty_t self) {
+  close(self.fd);
+  kill(self.pid, SIGTERM);
+}
+
 void tty_shell(const tty_t self, const char* shell) {
   if (self.pid == 0) { // child
     // exec login shell

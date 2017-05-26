@@ -20,4 +20,5 @@ typedef struct _tty {
 
 
 tty_t tty_spawn(void);
+void tty_close(const tty_t self);
 void tty_shell(const tty_t self, const char* shell);
