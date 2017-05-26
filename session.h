@@ -20,6 +20,7 @@ typedef struct __session {
 } session_t;
 
 void session_start(void);
+tab_t* tab_drop_by_pid(tab_t* const tabs, const int n);
 
 void* stdin_handler(void *jobq);
 void* tty_handler(void *jobq);
