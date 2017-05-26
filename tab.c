@@ -9,6 +9,14 @@ tab_t* tab_new(tab_t* const next) {
   return head;
 }
 
+tab_t* tab_close(tab_t* const self) {
+  tab_t* next = self->next;
+  self->next = NULL;
+  tty_close(self->tty);
+  free(self);
+  return next;
+}
+
 tab_t* tab_drop_by_pid(tab_t* const tabs, const pid_t pid) {
   tab_t* seeker = tabs;
   tab_t* prev = NULL;
