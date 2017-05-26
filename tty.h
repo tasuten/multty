@@ -13,7 +13,7 @@
 #endif
 
 typedef struct _tty {
-  int master_fd;
+  int fd;
   int pid;
 } tty_t;
 

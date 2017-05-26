@@ -61,7 +61,7 @@ void* stdin_handler(void* jobq) {
 
     strncpy(pkt.payload, buf, nread);
     pkt.type = MESSAGE;
-    pkt.dest = self->active->tty.master_fd;
+    pkt.dest = self->active->tty.fd;
     pkt.len = (size_t)nread;
 
     jobq_send(q, pkt);
@@ -77,7 +77,7 @@ void* tty_handler(void* jobq) {
   char buf[PAYLOAD_LEN];
   packet_t pkt;
   while(1) {
-    nread = read(self->active->tty.master_fd, buf, PAYLOAD_LEN);
+    nread = read(self->active->tty.fd, buf, PAYLOAD_LEN);
 
     if (nread < 0 || nread == 0) break;
 

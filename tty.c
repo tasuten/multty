@@ -2,11 +2,11 @@
 
 tty_t tty_spawn(void) {
   tty_t new = {
-    .master_fd = -1,
+    .fd = -1,
     .pid = -1,
   };
 
-  new.pid = forkpty(&new.master_fd, NULL, NULL, NULL);
+  new.pid = forkpty(&new.fd, NULL, NULL, NULL);
   if ( new.pid < 0 ) {
     fprintf(stderr, "forkpty() failed with error: %s\n", strerror(errno));
     exit(EXIT_FAILURE);
