@@ -16,8 +16,8 @@ void session_start(void) {
     self = calloc(1, sizeof(session_t));
   }
 
-  self->tabs = tab_new(NULL);
-  self->active = self->tabs;
+  self->tabs_head = tab_new(NULL);
+  self->active = self->tabs_head;
 
 
   // pass through signals to the signal_handler thread
@@ -151,7 +151,7 @@ void* signal_handler(void* _) {
 
 bool sigchld_handler(void) {
   pid_t exited = waitpid(-1, NULL, WNOHANG);
-  tab_t* next = tab_drop_by_pid(self->tabs, exited);
+  tab_t* next = tab_drop_by_pid(self->tabs_head, exited);
   if (next == NULL) {
     return true;
   } else {

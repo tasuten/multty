@@ -14,7 +14,7 @@
 #include "jobq.h"
 
 typedef struct __session {
-  tab_t* tabs;
+  tab_t* tabs_head;
   tab_t* active;
   pthread_mutex_t* active_mutex;
 } session_t;
