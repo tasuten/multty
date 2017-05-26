@@ -8,16 +8,16 @@
 
 #define READ 0
 #define WRITE 1
-#define PAYLOAD_LEN 256
+#define PAYLOAD_MAX 256
 
 typedef enum __type {
   MESSAGE,
-  FINISH,
+  QUIT_SESSION,
 } packet_type;
 
 typedef struct __packet {
   packet_type type;
-  char payload[PAYLOAD_LEN];
+  char payload[PAYLOAD_MAX];
   size_t len; // payload data length
   int dest;
 } packet_t;

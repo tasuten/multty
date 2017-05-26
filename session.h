@@ -6,24 +6,15 @@
 #include <stdbool.h>
 
 #include <pthread.h>
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/wait.h>
 
-#include "tab.h"
 #include "jobq.h"
+#include "signal_handle.h"
+#include "session_t.h"
 
-typedef struct __session {
-  tab_t* tabs_head;
-  tab_t* active;
-  pthread_mutex_t* active_mutex;
-} session_t;
+
 
 void session_start(void);
-tab_t* tab_drop_by_pid(tab_t* const tabs, const int n);
 
-void* stdin_handler(void *jobq);
-void* tty_handler(void *jobq);
-void* consume_queue(void *jobq);
-void* signal_handler(void* _);
-bool sigchld_handler(void);
+void* stdin_handler(void *self);
+void* tty_handler(void *self);
+void* consume_queue(void *self);

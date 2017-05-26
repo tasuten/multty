@@ -1,61 +1,37 @@
 #include "session.h"
 
-#define BUFLEN 256
-
-#define N_SIGNALS 4
-const int block_signals[N_SIGNALS] = {SIGINT, SIGTERM, SIGCHLD, SIGTSTP};
-
-
-session_t* self = NULL;
-
 void session_start(void) {
-  if ( self != NULL ) {
-    fprintf(stderr, "session must exists only one, on one process\n");
-    exit(EXIT_FAILURE);
-  } else {
-    self = calloc(1, sizeof(session_t));
-  }
+  session_t* self = calloc(1, sizeof(session_t));
 
   self->tabs_head = tab_new(NULL);
   self->active = self->tabs_head;
+  self->jobq = jobq_open();
 
 
-  // pass through signals to the signal_handler thread
-  sigset_t ignore;
-  sigfillset(&ignore);
-  pthread_sigmask(SIG_SETMASK,  &ignore,  NULL);
 
-  // SIGCHLD's default action is IGNore
-  // So, it doesn't ignore this
-  struct sigaction dummy;
-  dummy.sa_flags = SA_NOCLDSTOP;
-  sigaction(SIGCHLD, &dummy, NULL);
+  signal_handle_thread(self);
+  pthread_t _in;
+  pthread_create(&_in, NULL, &stdin_handler, (void *)self);
+  pthread_t _tty;
+  pthread_create(&_tty, NULL, &tty_handler, (void *)self);
 
-  pthread_t sig;
-  pthread_create(&sig, NULL, &signal_handler, (void *)NULL);
 
-  int* queue = jobq_open();
-  pthread_t in;
-  pthread_create(&in, NULL, &stdin_handler, (void *)queue);
-  pthread_t tty;
-  pthread_create(&tty, NULL, &tty_handler, (void *)queue);
   pthread_t consumer;
-  pthread_create(&consumer, NULL, &consume_queue, (void *)queue);
+  pthread_create(&consumer, NULL, &consume_queue, (void *)self);
+  pthread_join(consumer, NULL);
 
-
-  pthread_join(sig, NULL);
-  jobq_close(queue);
+  jobq_close(self->jobq);
   free(self); self = NULL;
 }
 
-void* stdin_handler(void* jobq) {
+void* stdin_handler(void* s) {
   pthread_detach(pthread_self());
-  int* q = (int *)jobq;
+  session_t* self = (session_t*)s;
   ssize_t nread = 0;
-  char buf[PAYLOAD_LEN];
+  char buf[PAYLOAD_MAX];
   packet_t pkt;
   while(1) {
-    nread = read(STDIN_FILENO,  buf,  PAYLOAD_LEN);
+    nread = read(STDIN_FILENO,  buf,  PAYLOAD_MAX);
 
     if (nread < 0 || nread == 0) break;
 
@@ -64,20 +40,20 @@ void* stdin_handler(void* jobq) {
     pkt.dest = self->active->tty.fd;
     pkt.len = (size_t)nread;
 
-    jobq_send(q, pkt);
+    jobq_send(self->jobq, pkt);
   }
 
   return NULL;
 }
 
-void* tty_handler(void* jobq) {
+void* tty_handler(void* s) {
   pthread_detach(pthread_self());
-  int* q = (int *)jobq;
+  session_t* self = (session_t*)s;
   ssize_t nread = 0;
-  char buf[PAYLOAD_LEN];
+  char buf[PAYLOAD_MAX];
   packet_t pkt;
   while(1) {
-    nread = read(self->active->tty.fd, buf, PAYLOAD_LEN);
+    nread = read(self->active->tty.fd, buf, PAYLOAD_MAX);
 
     if (nread < 0 || nread == 0) break;
 
@@ -85,21 +61,22 @@ void* tty_handler(void* jobq) {
     pkt.type = MESSAGE;
     pkt.dest = STDOUT_FILENO;
     pkt.len = (size_t)nread;
-    jobq_send(q, pkt);
+    jobq_send(self->jobq, pkt);
 
   }
 
   return NULL;
 }
 
-void* consume_queue(void *jobq) {
-  pthread_detach(pthread_self());
-  int* q = (int *)jobq;
+void* consume_queue(void *s) {
+  session_t* self = (session_t*)s;
   packet_t pkt;
   while(1) {
-    pkt = jobq_recv(q);
+    pkt = jobq_recv(self->jobq);
 
-    if (pkt.type == FINISH) break;
+    if (pkt.type == QUIT_SESSION) {
+      break;
+    }
 
     if (pkt.type == MESSAGE) {
       write(pkt.dest,  pkt.payload, pkt.len);
@@ -108,85 +85,4 @@ void* consume_queue(void *jobq) {
 
   return NULL;
 }
-
-void* signal_handler(void* _) {
-  _ = NULL;
-
-  sigset_t looking;
-  sigemptyset(&looking);
-  for ( int i = 0; i < N_SIGNALS; i++ ) {
-    sigaddset(&looking, block_signals[i]);
-  }
-
-  pthread_sigmask(SIG_SETMASK, &looking, NULL);
-
-  bool fin = false;
-
-  int sig;
-  while (!fin) {
-    if (sigwait(&looking, &sig) == 0) {
-      switch(sig) {
-        case SIGINT:
-        case SIGTERM:
-          fin = true;
-          break;
-        case SIGTSTP:
-          // detach
-          puts("detach");
-          break;
-        case SIGCHLD:
-          fin = sigchld_handler();
-          break;
-        default:
-          fprintf(stderr, "Unknow signal: %s", strsignal(sig));
-          exit(EXIT_FAILURE);
-          break;
-      }
-    }
-  }
-
-  // puts("deadsigi");
-  return NULL;
-}
-
-tab_t* tab_drop_by_pid(tab_t* const tabs, const pid_t pid) {
-  tab_t* seeker = tabs;
-  tab_t* prev = NULL;
-  while (1) {
-    if (seeker->tty.pid == pid) {
-      // dropping
-      if (prev == NULL) {
-      // when the head element is matched
-        tab_t* ret = seeker->next;
-        free(seeker);
-        return ret;
-      } else {
-        prev->next = seeker->next;
-        free(seeker);
-        return prev->next; // return next element
-      }
-    }
-    // no match found 
-    if (seeker->next == NULL) {
-      return NULL;
-    } else {
-      // next element
-      prev = seeker;
-      seeker = seeker->next;
-    }
-  }
-}
-
-
-bool sigchld_handler(void) {
-  pid_t exited = waitpid(-1, NULL, WNOHANG);
-  tab_t* next = tab_drop_by_pid(self->tabs_head, exited);
-  if (next == NULL) {
-    return true;
-  } else {
-    self->active = next;
-    return false;
-  }
-}
-
 

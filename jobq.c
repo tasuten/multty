@@ -19,11 +19,8 @@ void jobq_close(int* queue) {
 packet_t jobq_recv(int* queue) {
   packet_t pkt;
   ssize_t readlen = read(queue[READ], &pkt, sizeof(pkt));
-  if (readlen == 0) {
-    pkt.type = FINISH;
-    pkt.len = 0;
-    memset(pkt.payload, 0, PAYLOAD_LEN);
-    pkt.dest = -1;
+  if (readlen == 0) { // no writer exists
+    pkt.type = QUIT_SESSION;
   } else if (readlen != sizeof(pkt)) {
     fprintf(stderr, "reading jobqueue failed: %s", strerror(errno));
     jobq_close(queue);
