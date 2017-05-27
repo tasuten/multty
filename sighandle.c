@@ -22,20 +22,57 @@ void* sighandle_loop(void* s) {
   }
 
   // Don't ignore SIGCHLD, SIGWINCH
-  signal(SIGCHLD, nopmock);
-  signal(SIGWINCH, nopmock);
+  signal(SIGCHLD, _nopmock);
+  signal(SIGWINCH, _nopmock);
 
   int sig;
+  packet_t pkt;
   while(1){
     if (sigwait(&receive, &sig) == 0) {
-      // switch(sig){
-          printf("%s\n", strsignal(sig));
-      // }
+      switch(sig) {
+        case SIGINT:
+        case SIGTERM:
+          pkt.type = QUIT_SESSION;
+          jobq_send(self->jobq, pkt);
+          break;
+        case SIGTSTP:
+          pkt.type = DETACH_SESSION;
+          jobq_send(self->jobq, pkt);
+          break;
+        case SIGCHLD:
+          pkt.type = CHILD_DIED;
+          pkt.child = who_died();
+          jobq_send(self->jobq, pkt);
+          break;
+        case SIGWINCH:
+          resize_window();
+          break;
+        default:
+          fprintf(stderr, "Unknown signal: %s", strsignal(sig));
+          exit(EXIT_FAILURE);
+          break;
+      }
     }
   }
   return NULL;
 }
 
-void nopmock(int __signum) {
-  __signum = 0;
+void _nopmock(int _signum) {
+  _signum = 0;
+}
+
+void resize_window(void) {
+  struct winsize ws;
+  ioctl(STDIN_FILENO, TIOCGWINSZ, &ws);
+  ioctl(STDIN_FILENO, TIOCSWINSZ, &ws);
+}
+
+pid_t who_died(void) {
+  pid_t died;
+  died = waitpid(-1, NULL, WNOHANG);
+  if (died <= 0) { // including `kill -CHLD multty`
+    fprintf(stderr, "Something wrong on detect the dead pid: %s", strerror(errno));
+    exit(EXIT_FAILURE);
+  }
+  return died;
 }

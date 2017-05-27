@@ -13,6 +13,8 @@
 typedef enum __type {
   MESSAGE,
   QUIT_SESSION,
+  DETACH_SESSION,
+  CHILD_DIED,
 } packet_type;
 
 typedef struct __packet {
@@ -20,6 +22,8 @@ typedef struct __packet {
   char payload[PAYLOAD_MAX];
   size_t len; // payload data length
   int dest;
+  // for CHILD_DIED
+  pid_t child;
 } packet_t;
 
 int* jobq_open(void);
