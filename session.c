@@ -6,7 +6,8 @@ void session_start(void) {
   self->tabs_head = tab_new(NULL);
   self->active = self->tabs_head;
   self->jobq = jobq_open();
-
+  self->active_mutex = calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(self->active_mutex, NULL);
 
 
   signal_handle_thread(self);
