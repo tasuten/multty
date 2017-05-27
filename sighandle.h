@@ -10,3 +10,4 @@
 
 void init_sighandle(void);
 void* sighandle_loop(void* self);
+void nopmock(int __signum);

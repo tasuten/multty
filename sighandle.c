@@ -21,7 +21,9 @@ void* sighandle_loop(void* s) {
     sigaddset(&receive, sigs[i]);
   }
 
-  // ToDo: Don't ignore SIGCHLD, SIGWINCH
+  // Don't ignore SIGCHLD, SIGWINCH
+  signal(SIGCHLD, nopmock);
+  signal(SIGWINCH, nopmock);
 
   int sig;
   while(1){
@@ -34,3 +36,6 @@ void* sighandle_loop(void* s) {
   return NULL;
 }
 
+void nopmock(int __signum) {
+  __signum = 0;
+}
