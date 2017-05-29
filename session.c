@@ -4,6 +4,7 @@ void session_start(void) {
   session_t* self = calloc(1, sizeof(session_t));
   self->tabs_head = tab_new(NULL);
   self->active = self->tabs_head;
+  self->jobq = jobq_open();
 
   init_sighandle();
 

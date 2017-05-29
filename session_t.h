@@ -1,10 +1,11 @@
 #pragma once
 
 #include "tab.h"
+#include "jobq.h"
 
 typedef struct __session {
   tab_t* tabs_head;
   tab_t* active;
-  int* jobq;
+  mpsc_t* jobq;
 } session_t;
 
