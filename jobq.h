@@ -5,10 +5,11 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
+#include <pthread.h>
 
+#define PAYLOAD_MAX 256
 #define READ 0
 #define WRITE 1
-#define PAYLOAD_MAX 256
 
 typedef enum __type {
   MESSAGE,
@@ -26,7 +27,12 @@ typedef struct __packet {
   pid_t child;
 } packet_t;
 
-int* jobq_open(void);
-void jobq_close(int* queue);
-packet_t jobq_recv(int* queue);
-void jobq_send(int* queue, const packet_t pkt);
+typedef struct __atomic_jobq {
+  int* pipe;
+  pthread_mutex_t* write_lock;
+} mpsc_t; // multple producer single consumer
+
+mpsc_t* jobq_open(void);
+void jobq_close(mpsc_t* queue);
+packet_t jobq_recv(mpsc_t* queue);
+void jobq_send(mpsc_t* queue, const packet_t pkt);
