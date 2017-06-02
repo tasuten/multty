@@ -15,4 +15,5 @@ void session_close(session_t* s);
 void session_task_loop(session_t* self);
 
 bool handle_message_packet(packet_t pkt);
+bool handle_child_died_packet(packet_t pkt, session_t* self);
 

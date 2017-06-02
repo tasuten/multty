@@ -50,8 +50,7 @@ void session_task_loop(session_t* self) {
         // detach session
         break;
       case CHILD_DIED:
-        // pkt.child died
-
+        continue_loop = handle_child_died_packet(pkt, self);
         break;
       default:
         fprintf(stderr, "Unknown format pkt in jobqueue\n");
@@ -70,3 +69,22 @@ bool handle_message_packet(packet_t pkt) {
   return true;
 }
 
+
+bool handle_child_died_packet(packet_t pkt, session_t* self) {
+  pid_t died = pkt.child;
+  bool continue_session = false;
+
+  for (tab_t* iter = self->tabs_head; iter != NULL; iter = iter->next ) {
+    if ( iter->tty.pid == died ) {
+      self->active = iter->next;
+      tab_close(iter);
+      if (self->active != NULL) {
+        continue_session = true;
+      }
+      // ToDo: refresh screen
+      break;
+    }
+  }
+
+  return continue_session;
+}
