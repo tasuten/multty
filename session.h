@@ -2,6 +2,8 @@
 
 #include <stdbool.h>
 
+#include <poll.h>
+
 #include <pthread.h>
 
 #include "sighandle.h"
@@ -16,4 +18,5 @@ void session_task_loop(session_t* self);
 
 bool handle_message_packet(packet_t pkt);
 bool handle_child_died_packet(packet_t pkt, session_t* self);
-
+void* stdin_loop(void* self);
+void* ttyout_loop(void* self);

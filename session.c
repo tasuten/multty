@@ -7,7 +7,10 @@ void session_start(void) {
 
   pthread_t sig;
   pthread_create(&sig, NULL, &sighandle_loop, (void *)self);
-
+  pthread_t in;
+  pthread_create(&in, NULL, &stdin_loop, (void *)self);
+  pthread_t out;
+  pthread_create(&out, NULL, &ttyout_loop, (void *)self);
 
   session_task_loop(self);
 
@@ -96,4 +99,83 @@ bool handle_child_died_packet(packet_t pkt, session_t* self) {
   }
 
   return continue_session;
+}
+
+void* stdin_loop(void* s) {
+  pthread_detach(pthread_self());
+  session_t* self = (session_t*)s;
+
+  struct pollfd fds[1];
+
+  fds[0].fd = STDIN_FILENO;
+  fds[0].events = POLLIN;
+  fds[0].revents = 0;
+
+  packet_t pkt;
+
+  while (1) {
+    fds[0].events = POLLIN;
+    fds[0].revents = 0;
+
+    pkt.type = MESSAGE;
+
+    ssize_t readlen = read(fds[0].fd, pkt.payload, PAYLOAD_MAX);
+
+    if (readlen <= 0) {
+      fprintf(stderr, "STDIN I/O error: %s\n", strerror(errno));
+      pkt.type = QUIT_SESSION;
+      jobq_send(self->jobq, pkt);
+      break;
+    }
+
+    pkt.len = (size_t)readlen;
+    pthread_rwlock_rdlock(self->rwlock);
+    pkt.dest = self->active->tty.fd;
+    pthread_rwlock_unlock(self->rwlock);
+
+    jobq_send(self->jobq, pkt);
+
+  }
+
+  return NULL;
+}
+
+void* ttyout_loop(void* s) {
+  pthread_detach(pthread_self());
+  session_t* self = (session_t*)s;
+
+  struct pollfd fds[1];
+
+
+  while (1) {
+    pthread_rwlock_rdlock(self->rwlock);
+    fds[0].fd = self->active->tty.fd;
+    pthread_rwlock_unlock(self->rwlock);
+    fds[0].events = POLLIN;
+    fds[0].revents = 0;
+
+    if (poll(fds, 1, -1) != 1) break;
+
+    if (! fds[0].revents & POLLIN) break;
+
+    packet_t pkt;
+    pkt.type = MESSAGE;
+
+    pkt.dest = STDOUT_FILENO;
+
+    ssize_t readlen = read(fds[0].fd, pkt.payload, PAYLOAD_MAX);
+
+    if (readlen <= 0) {
+      pkt.type = QUIT_SESSION;
+      jobq_send(self->jobq, pkt);
+      break;
+    }
+
+    pkt.len = (size_t)readlen;
+
+    jobq_send(self->jobq, pkt);
+
+  }
+
+  return NULL;
 }
