@@ -105,21 +105,13 @@ void* stdin_loop(void* s) {
   pthread_detach(pthread_self());
   session_t* self = (session_t*)s;
 
-  struct pollfd fds[1];
-
-  fds[0].fd = STDIN_FILENO;
-  fds[0].events = POLLIN;
-  fds[0].revents = 0;
-
   packet_t pkt;
 
   while (1) {
-    fds[0].events = POLLIN;
-    fds[0].revents = 0;
 
     pkt.type = MESSAGE;
 
-    ssize_t readlen = read(fds[0].fd, pkt.payload, PAYLOAD_MAX);
+    ssize_t readlen = read(STDIN_FILENO, pkt.payload, PAYLOAD_MAX);
 
     if (readlen <= 0) {
       fprintf(stderr, "STDIN I/O error: %s\n", strerror(errno));
