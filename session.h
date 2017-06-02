@@ -14,4 +14,5 @@ session_t* session_init(void);
 void session_close(session_t* s);
 void session_task_loop(session_t* self);
 
+bool handle_message_packet(packet_t pkt);
 
