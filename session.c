@@ -8,10 +8,35 @@ void session_start(void) {
   pthread_t sig;
   pthread_create(&sig, NULL, &sighandle_loop, (void *)self);
 
+
+  session_task_loop(self);
+
   session_close(self);
 
 }
 
+void session_task_loop(session_t* self) {
+  packet_t pkt;
+  bool continue_loop = true;
+  while(continue_loop) {
+    pkt = jobq_recv(self->jobq);
+    switch (pkt.type) {
+      case MESSAGE:
+        break;
+      case QUIT_SESSION:
+        continue_loop = false;
+        break;
+      case DETACH_SESSION:
+        break;
+      case CHILD_DIED:
+        break;
+      default:
+        fprintf(stderr, "Unknown format pkt in jobqueue\n");
+        continue_loop = false;
+        break;
+    }
+  }
+}
 
 session_t* session_init(void) {
   session_t* self = calloc(1, sizeof(session_t));
