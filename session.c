@@ -21,6 +21,8 @@ session_t* session_init(void) {
   self->tabs_head = tab_new(NULL);
   self->active = self->tabs_head;
   self->jobq = jobq_open();
+  self->rwlock = calloc(1, sizeof(pthread_rwlock_t));
+  pthread_rwlock_init(self->rwlock, NULL);
   return self;
 }
 
@@ -29,6 +31,9 @@ void session_close(session_t* s) {
   // close all tabs
   for (tab_t* iter = s->tabs_head; iter != NULL; iter = tab_close(iter));
   s->active = NULL;
+
+  pthread_rwlock_destroy(s->rwlock);
+  free(s->rwlock);
 
   jobq_close(s->jobq);
   free(s);
@@ -41,7 +46,9 @@ void session_task_loop(session_t* self) {
     pkt = jobq_recv(self->jobq);
     switch (pkt.type) {
       case MESSAGE:
+        pthread_rwlock_rdlock(self->rwlock);
         continue_loop = handle_message_packet(pkt);
+        pthread_rwlock_unlock(self->rwlock);
         break;
       case QUIT_SESSION:
         continue_loop = false;
@@ -50,7 +57,9 @@ void session_task_loop(session_t* self) {
         // detach session
         break;
       case CHILD_DIED:
+        pthread_rwlock_wrlock(self->rwlock);
         continue_loop = handle_child_died_packet(pkt, self);
+        pthread_rwlock_unlock(self->rwlock);
         break;
       default:
         fprintf(stderr, "Unknown format pkt in jobqueue\n");
