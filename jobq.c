@@ -4,7 +4,7 @@ mpsc_t* jobq_open(void) {
   mpsc_t* q = calloc(1, sizeof(mpsc_t));
   q->pipe = calloc(2, sizeof(int));
   if (pipe(q->pipe) < 0) {
-    fprintf(stderr, "Opening pipe failed: %s", strerror(errno));
+    fprintf(stderr, "Opening pipe failed: %s\n", strerror(errno));
     return NULL;
   }
 
@@ -29,7 +29,7 @@ packet_t jobq_recv(mpsc_t* queue) {
   if (readlen == 0) { // no writer exists
     pkt.type = QUIT_SESSION;
   } else if (readlen != sizeof(pkt)) {
-    fprintf(stderr, "reading jobqueue failed: %s", strerror(errno));
+    fprintf(stderr, "reading jobqueue failed: %s\n", strerror(errno));
     jobq_close(queue);
     exit(EXIT_FAILURE);
   }
@@ -41,7 +41,7 @@ void jobq_send(mpsc_t* queue, const packet_t pkt) {
   ssize_t writelen = write(queue->pipe[WRITE], &pkt, sizeof(pkt));
   pthread_mutex_unlock(queue->write_lock);
   if (writelen != sizeof(pkt)) {
-    fprintf(stderr, "writing jobqueue failed: %s", strerror(errno));
+    fprintf(stderr, "writing jobqueue failed: %s\n", strerror(errno));
     jobq_close(queue);
     exit(EXIT_FAILURE);
   }

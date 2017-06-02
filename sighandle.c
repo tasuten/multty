@@ -48,7 +48,7 @@ void* sighandle_loop(void* s) {
           resize_window();
           break;
         default:
-          fprintf(stderr, "Unknown signal: %s", strsignal(sig));
+          fprintf(stderr, "Unknown signal: %s\n", strsignal(sig));
           exit(EXIT_FAILURE);
           break;
       }
@@ -71,7 +71,7 @@ pid_t who_died(void) {
   pid_t died;
   died = waitpid(-1, NULL, WNOHANG);
   if (died <= 0) { // including `kill -CHLD multty`
-    fprintf(stderr, "Something wrong on detect the dead pid: %s", strerror(errno));
+    fprintf(stderr, "Something wrong on detect the dead pid: %s\n", strerror(errno));
     exit(EXIT_FAILURE);
   }
   return died;
