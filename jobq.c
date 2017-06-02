@@ -24,6 +24,7 @@ void jobq_close(mpsc_t* queue) {
 
 packet_t jobq_recv(mpsc_t* queue) {
   packet_t pkt;
+  // sigle consumer, so no need mutal exclusion
   ssize_t readlen = read(queue->pipe[READ], &pkt, sizeof(pkt));
   if (readlen == 0) { // no writer exists
     pkt.type = QUIT_SESSION;
@@ -36,7 +37,9 @@ packet_t jobq_recv(mpsc_t* queue) {
 }
 
 void jobq_send(mpsc_t* queue, const packet_t pkt) {
+  pthread_mutex_lock(queue->write_lock);
   ssize_t writelen = write(queue->pipe[WRITE], &pkt, sizeof(pkt));
+  pthread_mutex_unlock(queue->write_lock);
   if (writelen != sizeof(pkt)) {
     fprintf(stderr, "writing jobqueue failed: %s", strerror(errno));
     jobq_close(queue);
