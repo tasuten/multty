@@ -41,7 +41,7 @@ void session_task_loop(session_t* self) {
     pkt = jobq_recv(self->jobq);
     switch (pkt.type) {
       case MESSAGE:
-        handle_message_packet(pkt);
+        continue_loop = handle_message_packet(pkt);
         break;
       case QUIT_SESSION:
         continue_loop = false;
@@ -51,6 +51,7 @@ void session_task_loop(session_t* self) {
         break;
       case CHILD_DIED:
         // pkt.child died
+
         break;
       default:
         fprintf(stderr, "Unknown format pkt in jobqueue\n");
